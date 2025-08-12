@@ -39,6 +39,27 @@ vim.api.nvim_set_keymap('i', '[', '[]<left>', { noremap = true })
 vim.api.nvim_set_keymap('i', '(', '()<left>', { noremap = true })
 vim.api.nvim_set_keymap('i', '`', '``<left>', { noremap = true })
 
+-- Toggle warnings
+vim.keymap.set('n', '<leader>dt', function()
+  if vim.diagnostic.is_enabled() then
+    vim.diagnostic.enabled(false)
+  else
+    vim.diagnostic.enable()
+  end
+end)
+
+-- Autocommand to toggle diagnostics when entering or leaving Python files
+vim.api.nvim_create_autocmd({ 'BufEnter', 'BufLeave' }, {
+  pattern = '*.py',
+  callback = function(event)
+    if event.event == 'BufEnter' then
+      vim.diagnostic.enable(false) -- Disable diagnostics when entering a Python file
+    elseif event.event == 'BufLeave' then
+      vim.diagnostic.enable(true) -- Enable diagnostics when leaving a Python file
+    end
+  end,
+})
+
 vim.g.have_nerd_font = false
 
 -- [[ Setting options ]]
@@ -364,11 +385,10 @@ require('lazy').setup({
       -- Automatically install LSPs and related tools to stdpath for Neovim
       -- Mason must be loaded before its dependents so we need to set it up here.
       -- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-      {
-        'mason-org/mason.nvim',
-        opts = { pip = { upgrade_pip = true } },
-      },
-      'mason-org/mason-lspconfig.nvim',
+      --
+      { 'mason-org/mason.nvim', opts = { pip = { upgrade_pip = true } } },
+      { 'mason-org/mason-lspconfig.nvim' },
+
       'WhoIsSethDaniel/mason-tool-installer.nvim',
 
       -- Useful status updates for LSP.
@@ -532,6 +552,9 @@ require('lazy').setup({
             completeUnimported = true,
           },
         },
+
+        -- no format on save for this guy :), but need the lsp, just toggle the warnings with <leader>dt
+        pylsp = { pylsp = {} },
         lua_ls = {
           settings = {
             Lua = { completion = { callSnippet = 'Replace' } },
@@ -607,6 +630,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        python = { 'isort' },
       },
     },
   },
